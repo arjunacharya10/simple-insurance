@@ -132,4 +132,15 @@ contract Insurance {
         return insuranceInfo[msg.sender];
     }
     
+    function checkUser() 
+    public view
+    returns (string memory){
+        if(msg.sender == owner)
+            return "owner";
+        if(msg.sender == police)
+            return "police";
+        else 
+            return "user";
+    }
+
 }

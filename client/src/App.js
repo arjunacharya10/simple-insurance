@@ -1,74 +1,93 @@
 import React, { Component } from "react";
-import SimpleStorageContract from "./contracts/SimpleStorage.json";
+import InsuranceContract from "./contracts/Insurance.json";
 import getWeb3 from "./getWeb3";
+import {CircularProgress,Button} from "@material-ui/core";
+import OwnerPage from "./components/OwnerPage";
+import PolicePage from "./components/PolicePage";
+import UserPage from "./components/UserPage";
 
 import "./App.css";
 
 class App extends Component {
-  state = { storageValue: 0, web3: null, accounts: null, contract: null };
+  state = { balance: 0, web3: null, account: null, contract: null ,loggedIn: false , type: ""};
 
-  componentDidMount = async () => {
+  login = async () =>{
     try {
-      // Get network provider and web3 instance.
       const web3 = await getWeb3();
-
-      // Use web3 to get the user's accounts.
       const accounts = await web3.eth.getAccounts();
-      console.log(accounts);
-
-      // Get the contract instance.
       const networkId = await web3.eth.net.getId();
-      const deployedNetwork = SimpleStorageContract.networks[networkId];
+      const deployedNetwork = InsuranceContract.networks[networkId];
       const instance = new web3.eth.Contract(
-        SimpleStorageContract.abi,
+        InsuranceContract.abi,
         deployedNetwork && deployedNetwork.address,
       );
-
-      // Set web3, accounts, and contract to the state, and then proceed with an
-      // example of interacting with the contract's methods.
-      this.setState({ web3, accounts, contract: instance }, this.runExample);
+      console.log(instance.address);
+      this.setState({ web3, account:accounts[0], contract: instance },this.updateBalance);
     } catch (error) {
-      // Catch any errors for any of the above operations.
       alert(
         `Failed to load web3, accounts, or contract. Check console for details.`,
       );
-      console.error(error);
     }
-  };
+  }
 
-  runExample = async () => {
-    const { accounts, contract } = this.state;
-    console.log(this.state);
+  getUserType=()=>{
+    const {contract,account} = this.state;
+    contract.methods.checkUser().call({from:account}).then(resp=>{
+      console.log(resp);
+      this.setState({type:resp});
+    })
+  }
 
-    // Stores a given value, 5 by default.
-    await contract.methods.set(5).send({ from: accounts[0] });
+  componentDidMount= async() =>{
+    this.login();
+  }
 
-    // Get the value from the contract to prove it worked.
-    const response = await contract.methods.get().call();
-
-    // Update state with the result.
-    this.setState({ storageValue: response });
+  updateBalance = () => {
+    const {web3,account} = this.state;
+    web3.eth.getBalance(account, (err, balance) => {
+      this.setState({balance:web3.utils.fromWei(balance, "ether")});
+    });
   };
 
   render() {
-    if (!this.state.web3) {
-      return <div>Loading Web3, accounts, and contract...</div>;
-    }
-    return (
-      <div className="App">
-        <h1>Good to Go!</h1>
-        <p>Your Truffle Box is installed and ready.</p>
-        <h2>Smart Contract Example</h2>
-        <p>
-          If your contracts compiled and migrated successfully, below will show
-          a stored value of 5 (by default).
-        </p>
-        <p>
-          Try changing the value stored on <strong>line 40</strong> of App.js.
-        </p>
-        <div>The stored value is: {this.state.storageValue}</div>
+    if(!this.state.web3){
+      return(
+        <div className="App-header">
+          <CircularProgress />
+          <h2>Loading web3, accounts, and contract ...</h2>
       </div>
-    );
+      )
+    }
+      const ethereum = window.ethereum;
+      if(ethereum){
+        ethereum.on('accountsChanged',async (accounts)=>{
+          this.setState({account:accounts[0]},this.updateBalance);
+        })
+      }
+
+      switch(this.state.type){
+        case "owner":
+          return <OwnerPage />
+        case "police":
+          return <PolicePage />
+        case "user":
+          return <UserPage />
+        default:
+          return (
+            <div className="App-header">
+              <h1>Welcome to <b style={{color:"#00cc00"}}>In-Sol-Ution</b></h1>
+              <p>A simple Insurance system built with the technology of blockchain</p>
+              <h2>We use <b style={{color:"#00cc00"}}>Metamask</b> as wallet</h2>
+              <p>You can change the account whenever required and we will update the same in our application</p>
+              <div>User: <b style={{color:"#00cc00"}}>{this.state.account}</b> Balance:  <b style={{color:"#00cc00"}}>{this.state.balance} ETH</b></div>
+              <p style={{color:"red"}}>If You change your account once logged in, You will have to refresh page to see effect!</p>
+              <Button variant="contained" color="primary" onClick={this.getUserType}>
+                Continue
+              </Button>
+            </div>
+          );
+      }
+    
   }
 }
 

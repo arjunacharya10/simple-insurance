@@ -5,6 +5,7 @@ import {CircularProgress,Button} from "@material-ui/core";
 import OwnerPage from "./components/OwnerPage";
 import PolicePage from "./components/PolicePage";
 import UserPage from "./components/UserPage";
+import BlockExplorer from "./components/BlockExplorer";
 
 import "./App.css";
 
@@ -21,7 +22,6 @@ class App extends Component {
         InsuranceContract.abi,
         deployedNetwork && deployedNetwork.address,
       );
-      console.log(instance.address);
       this.setState({ web3, account:accounts[0], contract: instance },this.updateBalance);
     } catch (error) {
       alert(
@@ -49,6 +49,31 @@ class App extends Component {
     });
   };
 
+  getContent =()=>{
+    switch(this.state.type){
+      case "owner":
+        return <OwnerPage />
+      case "police":
+        return <PolicePage />
+      case "user":
+        return <UserPage />
+      default:
+        return (
+          <div className="App-header">
+            <h1>Welcome to <b style={{color:"#00cc00"}}>In-Sol-Ution</b></h1>
+            <p>A simple Insurance system built with the technology of blockchain</p>
+            <h2>We use <b style={{color:"#00cc00"}}>Metamask</b> as wallet</h2>
+            <p>You can change the account whenever required and we will update the same in our application</p>
+            <div>User: <b style={{color:"#00cc00"}}>{this.state.account}</b> Balance:  <b style={{color:"#00cc00"}}>{this.state.balance} ETH</b></div>
+            <p style={{color:"red"}}>If You change your account once logged in, You will have to refresh page to see effect!</p>
+            <Button variant="contained" color="primary" onClick={this.getUserType}>
+              Continue
+            </Button>
+          </div>
+        );
+    }
+  }
+
   render() {
     if(!this.state.web3){
       return(
@@ -64,30 +89,12 @@ class App extends Component {
           this.setState({account:accounts[0]},this.updateBalance);
         })
       }
-
-      switch(this.state.type){
-        case "owner":
-          return <OwnerPage />
-        case "police":
-          return <PolicePage />
-        case "user":
-          return <UserPage />
-        default:
-          return (
-            <div className="App-header">
-              <h1>Welcome to <b style={{color:"#00cc00"}}>In-Sol-Ution</b></h1>
-              <p>A simple Insurance system built with the technology of blockchain</p>
-              <h2>We use <b style={{color:"#00cc00"}}>Metamask</b> as wallet</h2>
-              <p>You can change the account whenever required and we will update the same in our application</p>
-              <div>User: <b style={{color:"#00cc00"}}>{this.state.account}</b> Balance:  <b style={{color:"#00cc00"}}>{this.state.balance} ETH</b></div>
-              <p style={{color:"red"}}>If You change your account once logged in, You will have to refresh page to see effect!</p>
-              <Button variant="contained" color="primary" onClick={this.getUserType}>
-                Continue
-              </Button>
-            </div>
-          );
-      }
-    
+      return(
+        <div>
+          {this.getContent()}
+          <BlockExplorer web3={this.state.web3}/>
+        </div>
+      )
   }
 }
 

@@ -11784,6 +11784,32 @@
     "version": "0.5.16+commit.9c3226ce.Emscripten.clang"
   },
   "networks": {
+    "3": {
+      "events": {
+        "0x03702272f52cd96d608c5180ca7841a870ddd60b24f7913801458c9098f3d2a4": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "internalType": "address",
+              "name": "claimer",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint256",
+              "name": "amount",
+              "type": "uint256"
+            }
+          ],
+          "name": "ClaimNotification",
+          "type": "event"
+        }
+      },
+      "links": {},
+      "address": "0x14E1999801F98C2704D2F503926abB10855f31da",
+      "transactionHash": "0xe3257091c7515797cabcafa03d146009926ce347d9a3dcc689d087cfbc7fb303"
+    },
     "1597442256279": {
       "events": {
         "0x03702272f52cd96d608c5180ca7841a870ddd60b24f7913801458c9098f3d2a4": {
@@ -11838,7 +11864,7 @@
     }
   },
   "schemaVersion": "3.2.3",
-  "updatedAt": "2020-08-15T10:57:22.380Z",
+  "updatedAt": "2020-08-15T15:48:36.469Z",
   "networkType": "ethereum",
   "devdoc": {
     "methods": {}

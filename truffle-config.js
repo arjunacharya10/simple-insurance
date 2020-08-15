@@ -1,6 +1,6 @@
 const path = require("path");
-var HDWalletProvider = require("truffle-hdwallet-provider");
-var mnemonic = "achieve game crew south armor lobster polar usage swift field decade fiscal";
+var HDWalletProvider = require("@truffle/hdwallet-provider");
+var mnemonic = "<Enter ur mnemonics>";
 
 module.exports = {
   // See <http://truffleframework.com/docs/advanced/configuration>
@@ -17,7 +17,7 @@ module.exports = {
     },
     ropsten: {
       provider: function() { 
-       return new HDWalletProvider(mnemonic, "https://ropsten.infura.io/v3/97d8c71d584f432a9500b89b6019a9a6");
+       return new HDWalletProvider(mnemonic, "https://ropsten.infura.io/v3/97d8c71d584f432a9500b89b6019a9a6",0,3);
       },
       network_id: 3,
       gas: 4500000,

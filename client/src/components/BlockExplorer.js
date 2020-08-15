@@ -43,7 +43,7 @@ class BlockExplorer extends React.Component {
                         this.state.blocks.length>0?
                             this.generateBlocks()
                             :
-                            <div style={{borderRadius:"8px",textAlign:"center",backgroundColor:"rebeccapurple",margin:"0px 50px 20px 0px",padding:"10px"}}>
+                            <div style={{borderRadius:"8px",textAlign:"center",backgroundColor:"rebeccapurple",margin:"0px 25px 20px 25px",padding:"10px"}}>
                                 <h2>Loading block explorer</h2>
                                 <CircularProgress style={{color:"#00cc00"}}/>
                             </div>

@@ -19,9 +19,9 @@ contract Insurance {
     
     event ClaimNotification(address claimer, uint256 amount);
     
-    constructor() public {
+    constructor(address _police) public {
         owner = msg.sender;
-        police = msg.sender;
+        police = _police;
     }
     
     struct Entity{

@@ -16,6 +16,8 @@
   align-items: center;
   justify-content: center;
   color: white;
+  flex-grow: 1;
+  flex-shrink: 1;
 }
 
 .App-link {

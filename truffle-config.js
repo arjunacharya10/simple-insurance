@@ -1,6 +1,7 @@
 const path = require("path");
 var HDWalletProvider = require("@truffle/hdwallet-provider");
 var mnemonic = "achieve game crew south armor lobster polar usage swift field decade fiscal";
+var mnemonicLocal = "client system degree theme benefit match broken lock rural shed vote wave";
 
 module.exports = {
   // See <http://truffleframework.com/docs/advanced/configuration>

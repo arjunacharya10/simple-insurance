@@ -4,143 +4,145 @@ pragma experimental ABIEncoderV2;
 contract Insurance {
     address payable private owner;
     address private police;
-    
-    mapping(address => uint256) accumulatedPremium;
 
-    mapping(uint256 => bool) nonce;
-    mapping(address => Entity[])private insuranceInfo;
-    mapping(address => mapping(uint8 => uint256)) private insurances;
-    mapping(address => mapping(uint8 => bool))private hasPurchased;
-    mapping(address => mapping(uint8 => uint256)) private claims;
-    mapping(address => Claim[]) userClaims;
-    StoreClaim[] private insuranceClaims;
-    mapping(address => mapping(uint8 => bool)) private hasClaimed;
-    mapping(address => mapping(uint8 => bool)) private isApproved;
-    
-    event ClaimNotification(address claimer, uint256 amount);
+    Product[] private products;
+    Claim[] private allClaims;
+    mapping(address => mapping(uint8 => InsuranceDetails)) private insurance;
     
     constructor(address _police) public {
         owner = msg.sender;
         police = _police;
     }
     
-    struct Entity{
-        uint8 eType;
+    struct Product {
+        string name;
+    }
+    
+    struct Claim {
+        uint8 productIndex;
+        uint256 amount;
+        address claimedBy;
+        bool isApproved;
+        bool isRejected;
+    }
+
+    struct InsuranceDetails {
+        bool isPurchased;
+        bool isClaimed;
         uint256 premium;
-    }
-    
-    struct Claim{
-        uint8 eType;
         uint256 amount;
     }
     
-    struct StoreClaim {
-        address sender;
-        uint8 eType;
-        uint256 amount;
-    }
-    
-    modifier isPolice(){
+    modifier isPolice() {
         require(msg.sender == police,"Only Police can call this function");
         _;
     }
     
-    modifier isNotPolice(){
+    modifier isNotPolice() {
         require(msg.sender != police,"Police Cant purchase Insurance");
         _;
     }
     
-    modifier isOwner(){
-        require(msg.sender == owner, "Ownly owners can call this function");
+    modifier isOwner() {
+        require(msg.sender == owner, "Only owners can call this function");
         _;
     }
-    
-    function buyInsurance(uint8 eType, uint256 premium)
-    public isNotPolice
-    returns (string memory){
-        require(!hasPurchased[msg.sender][eType], "Insurance Already purchased");
-        insurances[msg.sender][eType] = premium;
-        hasPurchased[msg.sender][eType] = true;
-        insuranceInfo[msg.sender].push(Entity(eType,premium));
+
+    modifier isPolicyOrOwner() {
+        require(msg.sender == owner || msg.sender == police, "Only owners or police can call this function");
+        _;
     }
-    
-    function payPremium(uint8 eType)
-    public payable{
-        require(hasPurchased[msg.sender][eType],"Insurance not purchased yet");
-        require(msg.value >= insurances[msg.sender][eType], "Premium should be  >= premium during purchase");
-        accumulatedPremium[msg.sender] = accumulatedPremium[msg.sender] +msg.value;
+
+    function addProduct(string memory name) public isOwner {
+        products.push(Product(name));
     }
-    
-    function claimInsurance(uint8 eType, uint256 amount)
-    public 
-    returns(string memory){
-        require(hasPurchased[msg.sender][eType],"Insurance not purchased yet");
-        require(accumulatedPremium[msg.sender] > amount, "Claim amount cannot exceed accumulated premium");
-        if(!hasClaimed[msg.sender][eType]){
-            hasClaimed[msg.sender][eType] = true;
-            claims[msg.sender][eType] = amount;
-            userClaims[msg.sender].push(Claim(eType,amount));
-            StoreClaim memory storeClaim = StoreClaim(msg.sender,eType,amount);
-            insuranceClaims.push(storeClaim);
-            return "Success";
+
+    function getProducts() public view returns(Product[] memory) {
+        return products;
+    }
+
+    function getMyInsurance() public view returns(InsuranceDetails[] memory) {
+        InsuranceDetails[] memory tempArray = new InsuranceDetails[](products.length);
+        uint8 k = 0;
+        for (uint8 i=0; i<products.length; i++) {
+            tempArray[k] = insurance[msg.sender][i];
+            k = k + 1;
         }
-        else
-            return "Duplicate claim";
+        return tempArray;
+    }
+
+    function getMyClaims() public view returns(Claim[] memory) {
+        Claim[] memory tempClaims = new Claim[](allClaims.length);
+        uint k = 0;
+        for (uint i=0; i<allClaims.length; i++) {
+            if (allClaims[i].claimedBy == msg.sender) {
+                tempClaims[k] = allClaims[i];
+                k = k + 1;
+            }
+        }
+        return tempClaims;
+    }
+
+    function getAllClaims() public view isPolicyOrOwner returns(Claim[] memory) {
+        return allClaims;
     }
     
-    function approveInsurance(address payable claimer, uint8 eType)
-    public isPolice
-    returns (string memory)
-    {
-        require(hasClaimed[claimer][eType],"No such claim exists!");
-        require(!isApproved[claimer][eType],"Claim already Approved!");
-            isApproved[claimer][eType] = true;
-            uint256 amount = claims[claimer][eType];
-            claimer.transfer(amount * 7/10);
-            address(msg.sender).transfer(amount * 1 / 10);
-            delete claims[claimer][eType];
-            return "Success";
+    function buyInsurance(uint8 productIndex, uint256 premium) public {
+        require(!insurance[msg.sender][productIndex].isPurchased, "Insurance already purchased");
+        insurance[msg.sender][productIndex].premium = premium;
+        insurance[msg.sender][productIndex].isPurchased = true;
     }
     
-    function getClaims()
-    public view isOwner
-    returns (StoreClaim[] memory){
-        return insuranceClaims;
+    function payPremium(uint8 productIndex) public payable {
+        require(insurance[msg.sender][productIndex].isPurchased, "Insurance not purchased yet");
+        require(msg.value >= insurance[msg.sender][productIndex].premium, "EMI is less");
+        insurance[msg.sender][productIndex].amount = insurance[msg.sender][productIndex].amount + msg.value;
     }
     
-    function getUserClaims()
-    public view 
-    returns (Claim[] memory){
-        return userClaims[msg.sender];
+    function claimInsurance(uint8 productIndex, uint256 amount) public {
+        require(insurance[msg.sender][productIndex].isPurchased, "Insurance not purchased yet");
+        require(!insurance[msg.sender][productIndex].isClaimed, "Insurance already claimed");
+        insurance[msg.sender][productIndex].isClaimed = true;
+        allClaims.push(Claim(productIndex, amount, msg.sender, false, false));
     }
     
-    
-    function getBalance()
-    public view
-    returns (uint256){
-        return address(msg.sender).balance;
+    function approveInsurance(uint8 claimId) public isPolice {
+        require(allClaims.length > claimId, "No such claim exists!");
+        require(!allClaims[claimId].isApproved, "Claim already approved!");
+        require(!allClaims[claimId].isRejected, "Claim already rejected!");
+        allClaims[claimId].isApproved = true;
+        insurance[allClaims[claimId].claimedBy][allClaims[claimId].productIndex].isClaimed = false;
+        address payable claimer = address(uint160(allClaims[claimId].claimedBy));
+        claimer.transfer(allClaims[claimId].amount);
+    }
+
+    function rejectInsurance(uint8 claimId) public isPolice {
+        require(allClaims.length > claimId, "No such claim exists!");
+        require(!allClaims[claimId].isApproved, "Claim already approved!");
+        require(!allClaims[claimId].isRejected, "Claim already rejected!");
+        allClaims[claimId].isRejected = true;
+        insurance[allClaims[claimId].claimedBy][allClaims[claimId].productIndex].isClaimed = false;
     }
     
-    function closeCompany()
-    public isOwner {
+    function closeCompany() public isOwner {
         selfdestruct(owner);
     }
     
-    function getInsurances()
-    public view 
-    returns (Entity[] memory){
-        return insuranceInfo[msg.sender];
-    }
-    
-    function checkUser() 
-    public view
-    returns (string memory){
+    function checkUser() public view returns (string memory){
         if(msg.sender == owner)
             return "owner";
         if(msg.sender == police)
             return "police";
         else 
             return "user";
+    }
+    
+    function addFunds() public payable isOwner {
+        //
+    }
+    
+    function getBalance() public view isOwner returns (uint256) {
+        return address(this).balance;
     }
 
 }
